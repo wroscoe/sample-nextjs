@@ -1,53 +1,62 @@
 import Image from 'next/image'
+import { useRef, useEffect, useState } from 'react'
+import DrawingTool from '../components/DrawingTool';
+import PdfUpload from '../components/PdfUpload';
+import React from 'react';
+import Timeline from '../components/Timeline';
+import { timelineData } from '../data/timeline';
+import { useSession, signIn, signOut } from "next-auth/react";
 
 export default function Home() {
+  const { data: session } = useSession();
+
+  // New subscribe function
+  const subscribe = async () => {
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session.user.email }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error(data.error);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
-    <div className="min-h-screen lg:flex text-lg">
-      {/* left side */}
-      <div className="lg:w-1/2 relative z-10 flex flex-col justify-center px-10 lg:px-20 py-20 lg:py-0 text-left">
-        <h2 className="inter text-4xl mb-3 font-bold text-gray-800">
-          Welcome to Your Next.js App{" "}
-          <span className="block text-blue-500 text-2xl font-normal">
-            Deployed to DigitalOcean
-          </span>
-        </h2>
-
-        <p className="text-gray-700 mb-6">
-          Deploy API routes, static frontend, databases, and more.
-        </p>
-
-        <div className="sm:flex">
-          <a
-            href="https://www.digitalocean.com/docs/app-platform"
-            className="block py-2 px-5 rounded shadow bg-gray-500 text-gray-100 sm:mr-2 mb-2 sm:mb-0"
-          >
-            View the Docs
-          </a>
-          <a
-            href="https://cloud.digitalocean.com/apps"
-            className="block py-2 px-5 rounded shadow bg-blue-500 text-blue-100"
-          >
-            View Your Dashboard
-          </a>
-        </div>
+    <div className="min-h-screen lg:flex flex-col text-lg">
+      {/* Login section */}
+      <div className="p-4">
+        {!session ? (
+          <button onClick={() => signIn("google")} className="px-4 py-2 bg-blue-600 text-white rounded">
+            Sign in with Google
+          </button>
+        ) : (
+          <div>
+            <p className="mb-2">Signed in as {session.user.email}</p>
+            <button onClick={() => signOut()} className="px-4 py-2 bg-red-600 text-white rounded">
+              Sign Out
+            </button>
+            {/* New Subscribe button */}
+            <button onClick={subscribe} className="ml-2 px-4 py-2 bg-green-600 text-white rounded">
+              Subscribe
+            </button>
+          </div>
+        )}
       </div>
-
-      {/* right side */}
-      <div className="lg:w-1/2 relative">
-        <svg
-          className="hidden lg:block text-white fill-current absolute h-full transform -translate-x-1/2 w-48 z-10"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-        >
-          <polygon points="50,0 100,0 50,100 0,100"></polygon>
-        </svg>
-
-        <Image
-          src="background.jpg"
-          alt="Ocean Image"
-          className="lg:absolute object-cover lg:inset-y-0 lg:right-0 lg:h-full lg:w-full"
-        />
-      </div>
+      {/* Drawing tool section */}
+      <DrawingTool />
+      {/* PDF Upload section */}
+      <PdfUpload />
+      {/* Timeline section */}
+      <Timeline items={timelineData} />
+      {/* ...existing code if needed... */}
     </div>
   );
 }
